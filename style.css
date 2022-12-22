@@ -1,0 +1,118 @@
+:root {
+  --bg-color: #413f42;
+  --player1-color: #16003b;
+  --player2-color: #f73d93;
+  color: white;
+
+  --game-board-size: calc(var(--cell-size) * 3);
+  --cell-size: 100px;
+  --cell-gap: 8px;
+}
+
+* {
+  /* box-sizing: border-box; */
+}
+
+body {
+  background-color: var(--bg-color);
+  background: linear-gradient(to right, grey, rgb(0, 0, 0)) no-repeat;
+  height: 100vh;
+}
+
+.game-area {
+  position: absolute;
+  top: 30%;
+  right: calc(50% - calc(var(--game-board-size) / 2));
+  /* width: var(--game-board-size);
+  height: var(--game-board-size); */
+
+  display: grid;
+  grid-template-columns: repeat(3, minmax(var(--cell-size), 1fr));
+  grid-template-rows: repeat(3, minmax(var(--cell-size), 1fr));
+  grid-template-areas:
+    "00 01 02"
+    "10 11 12"
+    "20 21 22";
+  /* align-items: center; */
+  /* justify-content: center; */
+  /* gap: var(--cell-gap); */
+  /* padding: calc(0.1 * var(--game-board-size)); */
+  /* padding: 1%; */
+  /* border: 3px solid white; */
+
+  font-size: 2rem;
+}
+
+.cell {
+  border-color: white !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  /* width: 100%;
+  height: 100%; */
+
+  /* box-sizing: content-box !important; */
+}
+
+.cell:hover {
+  /* background-color: rgba(0, 0, 0, 0.274); */
+}
+
+.cell[row="1"] {
+  border-top: 5px solid;
+  border-bottom: 5px solid;
+}
+.cell[col="1"] {
+  border-left: 5px solid;
+  border-right: 5px solid;
+}
+
+header {
+  text-align: center;
+}
+
+.options {
+  display: flex;
+  justify-content: center;
+  gap: 50%;
+  width: 100%;
+  margin: 20px 50px;
+}
+
+.player2 {
+  /* display: flex; */
+}
+
+.options img {
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: 80px;
+  padding: 8px;
+  display: inline-block;
+  cursor: pointer;
+  position: relative;
+  box-sizing: border-box;
+  /* color: white; */
+  filter: invert(100%) sepia(0%) saturate(7470%) hue-rotate(88deg)
+    brightness(99%) contrast(107%);
+}
+
+.options img.selected {
+  border: 2px solid var(--player2-color);
+  border-radius: 10px;
+  filter: invert(59%) sepia(97%) saturate(4727%) hue-rotate(307deg)
+    brightness(95%) contrast(104%);
+}
+
+.player2 > img:has(+ img) {
+  margin-right: 20px;
+}
+
+.hide {
+  visibility: hidden;
+}
+
+.error {
+  color: rgb(198, 7, 7);
+}

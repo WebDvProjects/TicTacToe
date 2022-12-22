@@ -9,5 +9,40 @@
 
     <title>Tic Tac Toe</title>
   </head>
-  <body></body>
+  <body>
+    <header>
+      <h1>TIC TAC TOE</h1>
+      <div class="options">
+        <div class="player1">
+          <h3>Player 1</h3>
+          <img class="selected" src="images/gamepad.png" alt="Player1 User" />
+        </div>
+
+        <div class="player2">
+          <h3>Player 2</h3>
+          <p>User or Computer</p>
+          <img src="images/gamepad.png" id="user" alt="Player2 User" />
+          <img src="images/imac.png" id="computer" alt="Player2 Computer" />
+        </div>
+      </div>
+    </header>
+    <main>
+      <button id="start">START</button>
+      <button id="reset">RESET</button>
+      <p class="message-logger error"></p>
+      <div class="game-area hide" id="board">
+        <div class="cell" row="0" col="0">O</div>
+        <div class="cell" row="0" col="1">O</div>
+        <div class="cell" row="0" col="2">O</div>
+
+        <div class="cell" row="1" col="0">X</div>
+        <div class="cell" row="1" col="1">X</div>
+        <div class="cell" row="1" col="2">O</div>
+
+        <div class="cell" row="2" col="0">O</div>
+        <div class="cell" row="2" col="1">O</div>
+        <div class="cell" row="2" col="2">O</div>
+      </div>
+    </main>
+  </body>
 </html>

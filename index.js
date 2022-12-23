@@ -141,6 +141,9 @@ const Player = (type, token = 0, name = "Player 1") => {
     return !!token ? "X" : "O";
   }
 
+  if (type === "computer") {
+  }
+
   return { Type, Name, Score, Token };
 };
 
@@ -216,14 +219,25 @@ const Game = (() => {
     // hide icons
     playerOptionsDisplay.classList.add("hide");
 
+    // starts by setting the starting player for the first round
     selectRandomStartPlayer();
     logMessage(`${currentPlayer.Name()}'s Turn`);
+
+    // if the current player is a computer then simulate a computer turn
+    if (currentPlayer.Type() != "user") {
+      computerTurn();
+    }
   }
 
   function nextRound() {
     selectRandomStartPlayer();
     gameDisplay.resetBoardDisplay();
     logMessage(`${currentPlayer.Name()}'s Turn`);
+
+    // if the current player is a computer then simulate a computer turn
+    if (currentPlayer.Type() != "user") {
+      computerTurn();
+    }
   }
 
   function restartGame() {
@@ -247,7 +261,78 @@ const Game = (() => {
 
   function selectRandomStartPlayer() {
     // set one of the players to current player
-    currentPlayer = player1;
+    currentPlayer = [player1, player2][Math.floor(Math.random() * 2)];
+  }
+
+  //   function simulateGame() {
+  //     // starts by setting the starting player for this round
+  //     selectRandomStartPlayer();
+  //     logMessage(`${currentPlayer.Name()}'s Turn`);
+  //     // if current player is computer
+  //     if (currentPlayer.Type() != "user") {
+  //       // play the computer turn
+  //       while (!!computerTurn()) {
+  //         // !!temporary
+  //         alert("computer failed to take a turn");
+  //       }
+  //       transferTurn();
+  //     }
+  //   }
+
+  function transferTurn() {
+    // update displayer before turn goes to next player
+    gameDisplay.updateBoardDisplay();
+    //  check win
+    if (gameBoard.checkWin() || gameBoard.checkTie()) {
+      let displayMsg = "";
+      if (gameBoard.checkWin()) {
+        // display win message delay a few seconds and reset level
+        displayMsg = `${currentPlayer.Name()} has Won the round`;
+      } else {
+        displayMsg = "A tie";
+      }
+
+      // Popup message box
+      messageDisplay.roundEnd(displayMsg);
+    } else {
+      currentPlayer = currentPlayer === player1 ? player2 : player1;
+      logMessage(`${currentPlayer.Name()}'s Turn`);
+
+      if (currentPlayer.Type() != "user") {
+        computerTurn();
+      }
+    }
+  }
+
+  function userTurn(cell) {
+    const value = currentPlayer.Token();
+    const position = [cell.getAttribute("row"), cell.getAttribute("col")];
+
+    // if the move was accepted then transfer turn
+    if (gameBoard.updateBoard(value, ...position)) {
+      console.log("transferring turn");
+      transferTurn();
+    }
+  }
+
+  function computerTurn() {
+    if (currentPlayer.Type() != "computer") alert("Wrong player");
+    // computer Algorithm
+    for (let i = 0; i < gameBoard.Board().length; i++) {
+      for (let j = 0; j < gameBoard.Board()[i].length; j++) {
+        const element = gameBoard.Board()[i][j];
+        console.log(element);
+        // check if position is playable
+        if (!!!element) {
+          if (gameBoard.updateBoard(currentPlayer.Token(), i, j)) {
+            transferTurn();
+            return;
+          }
+        }
+      }
+    }
+
+    alert("Computer could make move");
   }
 
   [...cells].forEach((cell) => {
@@ -260,29 +345,12 @@ const Game = (() => {
         return;
       }
       const cell = e.currentTarget;
-      const value = currentPlayer.Token();
-      const position = [cell.getAttribute("row"), cell.getAttribute("col")];
 
-      // if the move was accepted then transfer turn
-      if (gameBoard.updateBoard(value, ...position)) {
-        //  check win
-        if (gameBoard.checkWin() || gameBoard.checkTie()) {
-          let displayMsg = "";
-          if (gameBoard.checkWin()) {
-            // display win message delay a few seconds and reset level
-            displayMsg = `${currentPlayer.Name()} has Won the round`;
-          } else {
-            displayMsg = "A tie";
-          }
+      // execute the move
+      userTurn(cell);
 
-          // Popup message box
-          messageDisplay.roundEnd(displayMsg);
-        } else {
-          currentPlayer = currentPlayer === player1 ? player2 : player1;
-          logMessage(`${currentPlayer.Name()}'s Turn`);
-        }
-      }
-      gameDisplay.updateBoardDisplay();
+      // after player plays if current player is computer then
+
       e.stopPropagation();
     };
   });

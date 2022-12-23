@@ -93,7 +93,7 @@ const gameDisplay = (function () {
   // DOM Elements
   const gameCanvas = document.getElementById("game-area");
 
-  function displayGameBoard() {
+  function updateBoardDisplay() {
     const boardValues = gameBoard.boardValues();
 
     const cellArr = [...cells];
@@ -103,15 +103,15 @@ const gameDisplay = (function () {
     }
   }
 
-  function resetGame() {
+  function resetBoardDisplay() {
     gameBoard.resetBoard();
-    displayGameBoard();
+    updateBoardDisplay();
   }
   //   function updateGameBoard() {}
 
   //   function resetGameBoard() {}
 
-  return { displayGameBoard, resetGame };
+  return { updateBoardDisplay, resetBoardDisplay };
 })();
 
 /* 
@@ -152,67 +152,87 @@ const Game = (() => {
   "use strict";
   const playerOptionsDisplay = document.querySelector("header .options");
   const player2Icons = document.querySelectorAll(".player2 img");
+  const player1Icons = document.querySelectorAll(".player1 img");
 
   const messageLog = document.querySelector("p.message-logger");
   const gameBoardElement = document.getElementById("board");
 
-  const resetBtn = document.getElementById("reset");
   const startBtn = document.getElementById("start");
 
   let currentPlayer = null;
   let player1 = null;
   let player2 = null;
 
-  startBtn.onclick = (e) => startGame();
-  resetBtn.onclick = (e) => restartGame();
+  startBtn.onclick = (e) => {
+    if (startBtn.textContent.toLowerCase() == "start") {
+      startGame();
+      startBtn.textContent = "EXIT";
+      startBtn.setAttribute("game-playing", "true");
+    } else {
+      restartGame();
+    }
+  };
 
-  player2Icons.forEach(
-    (icon) =>
-      (icon.onclick = () => {
-        if (icon.classList.contains("selected")) return;
+  iconGroupSetup(player1Icons);
+  iconGroupSetup(player2Icons);
 
-        // clear all player 2 current selections
-        clearPlayer2Icons();
+  function iconGroupSetup(iconGroup) {
+    iconGroup.forEach(
+      (icon) =>
+        (icon.onclick = () => {
+          if (icon.classList.contains("selected")) return;
 
-        icon.classList.add("selected");
-        // clear selection error
-        logMessage("");
-      })
-  );
+          // clear all player 1/2 current selections
+          clearSelectedIcons(iconGroup);
 
-  function clearPlayer2Icons() {
-    player2Icons.forEach((icon) => icon.classList.remove("selected"));
+          icon.classList.add("selected");
+          // clear selection error
+          logMessage("");
+        })
+    );
+  }
+
+  function clearSelectedIcons(iconGroup) {
+    iconGroup.forEach((icon) => icon.classList.remove("selected"));
   }
 
   function startGame() {
     let player2Option = document.querySelector(".player2 .selected");
+    let player1Option = document.querySelector(".player1 .selected");
+    let player1Name = document.getElementById("player1-name").value;
+    let player2Name = document.getElementById("player2-name").value;
 
-    // if user has not picked second player option
-    if (!!!player2Option) {
-      logMessage("Please choose a player 2");
-    } else {
-      // activate game board
-      gameBoardElement.classList.remove("hide");
+    // activate game board
+    gameBoardElement.classList.remove("hide");
 
-      const player2Type = player2Option.id;
+    // Get player names if no names then use default names
+    player1Name = !!player1Name ? player1Name : "Player 1";
+    player2Name = !!player2Name ? player2Name : "Player 2";
 
-      player1 = Player("user", 1, "You");
-      player2 = Player(player2Type, 0);
+    // create player objects
+    player1 = Player(player1Option.id, 1, player1Name);
+    player2 = Player(player2Option.id, 0, player2Name);
 
-      // hide icons
-      playerOptionsDisplay.classList.add("hide");
+    // hide icons
+    playerOptionsDisplay.classList.add("hide");
 
-      selectRandomStartPlayer();
-    }
+    selectRandomStartPlayer();
+    logMessage(`${currentPlayer.Name()}'s Turn`);
+  }
+
+  function nextRound() {
+    selectRandomStartPlayer();
+    gameDisplay.resetBoardDisplay();
+    logMessage(`${currentPlayer.Name()}'s Turn`);
   }
 
   function restartGame() {
-    clearPlayer2Icons();
-
+    startBtn.textContent = "START";
+    startBtn.setAttribute("game-playing", "false");
     logMessage("");
 
     // deactivate game board
-    gameDisplay.resetGame();
+    gameDisplay.resetBoardDisplay();
     gameBoardElement.classList.add("hide");
 
     // show player 2 options
@@ -232,7 +252,13 @@ const Game = (() => {
 
   [...cells].forEach((cell) => {
     cell.onclick = (e) => {
+      // if current player is null/undefined
       if (!!!currentPlayer) return;
+
+      //   if currentPlayer is bot then ignore
+      if (currentPlayer.Type() != "user") {
+        return;
+      }
       const cell = e.currentTarget;
       const value = currentPlayer.Token();
       const position = [cell.getAttribute("row"), cell.getAttribute("col")];
@@ -241,29 +267,116 @@ const Game = (() => {
       if (gameBoard.updateBoard(value, ...position)) {
         //  check win
         if (gameBoard.checkWin() || gameBoard.checkTie()) {
+          let displayMsg = "";
           if (gameBoard.checkWin()) {
             // display win message delay a few seconds and reset level
-            logMessage(`${currentPlayer.Name()} has Won the round`);
+            displayMsg = `${currentPlayer.Name()} has Won the round`;
           } else {
-            logMessage("A tie");
+            displayMsg = "A tie";
           }
 
-          setTimeout(() => {
-            gameDisplay.resetGame();
-          }, 2000);
-
-          selectRandomStartPlayer();
+          // Popup message box
+          messageDisplay.roundEnd(displayMsg);
         } else {
           currentPlayer = currentPlayer === player1 ? player2 : player1;
           logMessage(`${currentPlayer.Name()}'s Turn`);
         }
       }
-      gameDisplay.displayGameBoard();
+      gameDisplay.updateBoardDisplay();
       e.stopPropagation();
     };
   });
 
-  return {};
+  return { startGame, nextRound, restartGame };
 })();
 
-gameDisplay.resetGame();
+const messageDisplay = (() => {
+  const main = document.querySelector("main");
+  const header = document.querySelector("header");
+
+  const messageBox = document.querySelector(".message-box");
+  const msgTextContainer = document.createElement("div");
+  const btnContainer = document.createElement("div");
+  btnContainer.classList.add("btn-container");
+  msgTextContainer.classList.add("txt-container");
+  messageBox.append(msgTextContainer, btnContainer);
+
+  function toggleMesageBox() {
+    messageBox.classList.toggle("hide");
+    if (messageBox.classList.contains("hide")) {
+      toggleOtherContent(false);
+    } else {
+      toggleOtherContent(true);
+    }
+  }
+
+  function clearMessageBox() {
+    msgTextContainer.innerHTML = "";
+    btnContainer.innerHTML = "";
+    toggleMesageBox();
+  }
+
+  function playerInfoPrompt(type1, type2) {
+    // if (type1 != "user" && type2 != "user") return ["Computer1", "Computer2"];
+    // if (type1 === "user") {
+    // }
+    // if (type2 === "user") {
+    // }
+  }
+
+  function displayMessage(msg, error = true) {
+    toggleMesageBox();
+    const message = document.createElement("p");
+    if (error) message.classList.add("error");
+
+    message.textContent = msg;
+
+    msgTextContainer.appendChild(message);
+
+    const okBtn = document.createElement("button");
+    okBtn.textContent = "Ok!";
+    okBtn.classList.add("ok-btn");
+    okBtn.onclick = () => clearMessageBox();
+    btnContainer.appendChild(okBtn);
+  }
+
+  function roundEnd(msg) {
+    toggleMesageBox();
+    const nextBtn = document.createElement("button");
+    const resetBtn = document.createElement("button");
+    nextBtn.classList.add("nxt-btn");
+    nextBtn.textContent = "Again";
+    resetBtn.classList.add("reset-btn");
+    resetBtn.textContent = "Reset";
+
+    nextBtn.onclick = () => {
+      clearMessageBox();
+      Game.nextRound();
+    };
+
+    resetBtn.onclick = () => {
+      clearMessageBox();
+      Game.restartGame();
+    };
+
+    const message = document.createElement("p");
+    message.textContent = msg;
+    msgTextContainer.append(message);
+
+    btnContainer.append(nextBtn, resetBtn);
+  }
+
+  function toggleOtherContent(disable = true) {
+    main.setAttribute("aria-disabled", disable);
+    header.setAttribute("aria-disabled", disable);
+  }
+
+  return { displayMessage, roundEnd };
+})();
+
+// ON LOAD
+
+window.onload = () => {
+  // reset and startup new game environment
+  gameDisplay.resetBoardDisplay();
+};

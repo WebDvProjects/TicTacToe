@@ -17,11 +17,31 @@ body {
   background-color: var(--bg-color);
   background: linear-gradient(to right, grey, rgb(0, 0, 0)) no-repeat;
   height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "header"
+    "main";
+}
+
+main {
+  grid-area: main;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+header {
+  grid-area: header;
+  /* position: relative; */
+  text-align: center;
+  /* height: min-content; */
 }
 
 .game-area {
   position: absolute;
-  top: 30%;
+  top: 10%;
   right: calc(50% - calc(var(--game-board-size) / 2));
   /* width: var(--game-board-size);
   height: var(--game-board-size); */
@@ -68,21 +88,51 @@ body {
   border-right: 5px solid;
 }
 
-header {
-  text-align: center;
-}
-
 .options {
   display: flex;
   justify-content: center;
   gap: 50%;
   width: 100%;
-  margin: 20px 50px;
+  margin: 20px 0px;
 }
 
-.player2 {
-  /* display: flex; */
+.player2,
+.player1 {
+  display: flex;
+  flex-direction: column;
 }
+
+.icon-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+
+  position: relative;
+}
+
+.icon-wrapper input {
+  position: absolute;
+  bottom: -30px;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-left: 5px;
+  width: 80%;
+  height: 20px;
+  border-radius: 7px;
+  border: 2px solid var(--player2-color);
+}
+
+input:focus {
+  outline: none;
+}
+
+/* @media only screen and (max-width: ) {
+} */
+
+/* .options h1 {
+  margin: 0;
+} */
 
 .options img {
   flex-grow: 0;
@@ -106,13 +156,142 @@ header {
 }
 
 .player2 > img:has(+ img) {
-  margin-right: 20px;
+  /* margin-right: 20px; */
 }
 
 .hide {
-  visibility: hidden;
+  display: none !important;
 }
 
-.error {
+/* .error {
   color: rgb(198, 7, 7);
+} */
+
+.message-box {
+  --size: 250px;
+  width: var(--size);
+  height: var(--size);
+  position: absolute;
+  top: 20%;
+  right: calc(50% - calc(var(--size) / 2));
+  border: 3px solid white;
+  border-radius: 10px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+
+  box-sizing: border-box;
+  padding: 20px 40px;
+
+  background-color: white;
+
+  box-shadow: 0 0.5rem 1rem black;
+}
+
+.message-box > div {
+  width: 100%;
+}
+
+.message-box .txt-container p.error {
+  text-align: center;
+  font-size: 1.8rem;
+  color: rgb(198, 7, 7);
+}
+
+.message-box button {
+  font-weight: 700;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  outline: none !important;
+  border: none;
+
+  box-sizing: border-box !important;
+
+  border: 2px solid white;
+
+  width: 40%;
+}
+
+.message-box button:hover {
+  opacity: 0.8;
+  border-color: black;
+}
+
+button.nxt-btn {
+  background-color: var(--player1-color);
+  color: white;
+}
+
+button.reset-btn {
+  background-color: red;
+  color: white;
+}
+
+button.ok-btn {
+  width: 80%;
+  background-color: black;
+  color: white;
+}
+
+.message-box p {
+  color: black;
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.message-box .btn-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btn-container:has(> .ok-btn) {
+  justify-content: center;
+}
+
+[aria-disabled="true"] {
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+#start {
+  --start-btn-size: 80px;
+  width: var(--start-btn-size);
+  height: var(--start-btn-size);
+  border-radius: 50%;
+  border: 2px solid black;
+  box-shadow: 0 0 0.9rem black;
+  cursor: pointer;
+
+  margin-top: 25px;
+  margin-bottom: 50px;
+
+  position: relative;
+}
+
+#start:hover {
+  opacity: 0.9;
+}
+
+.message-logger {
+  width: 300px;
+  position: absolute;
+  font-size: 1.5rem;
+  color: white;
+  /* background-color: red; */
+  text-align: center;
+  top: 70px;
+  left: calc(50% - 150px);
+}
+
+main:has([game-playing="true"]) {
+  align-items: flex-end;
+}
+
+[game-playing="true"] {
+  margin-bottom: 100px !important;
 }

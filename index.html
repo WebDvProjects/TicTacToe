@@ -12,24 +12,51 @@
   <body>
     <header>
       <h1>TIC TAC TOE</h1>
+      <p class="message-logger"></p>
       <div class="options">
         <div class="player1">
           <h3>Player 1</h3>
-          <img class="selected" src="images/gamepad.png" alt="Player1 User" />
+          <div class="icon-wrapper">
+            <img
+              class="selected"
+              id="user"
+              src="images/gamepad.png"
+              alt="Player1 User"
+            />
+            <img src="images/imac.png" id="computer" alt="Player2 Computer" />
+            <input
+              type="text"
+              name=""
+              id="player1-name"
+              placeholder="Player1 name"
+            />
+          </div>
         </div>
 
         <div class="player2">
           <h3>Player 2</h3>
-          <p>User or Computer</p>
-          <img src="images/gamepad.png" id="user" alt="Player2 User" />
-          <img src="images/imac.png" id="computer" alt="Player2 Computer" />
+          <!-- <p>User or Computer</p> -->
+          <div class="icon-wrapper">
+            <img
+              class="selected"
+              src="images/gamepad.png"
+              id="user"
+              alt="Player2 User"
+            />
+            <img src="images/imac.png" id="computer" alt="Player2 Computer" />
+            <input
+              type="text"
+              name=""
+              id="player2-name"
+              placeholder="Player2 name"
+            />
+          </div>
         </div>
       </div>
     </header>
     <main>
-      <button id="start">START</button>
-      <button id="reset">RESET</button>
-      <p class="message-logger error"></p>
+      <!-- <button id="reset">RESET</button> -->
+      <button id="start" game-playing="false">START</button>
       <div class="game-area hide" id="board">
         <div class="cell" row="0" col="0">O</div>
         <div class="cell" row="0" col="1">O</div>
@@ -44,5 +71,7 @@
         <div class="cell" row="2" col="2">O</div>
       </div>
     </main>
+
+    <div class="message-box hide" aria-disabled="false"></div>
   </body>
 </html>

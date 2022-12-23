@@ -53,12 +53,6 @@ header {
     "00 01 02"
     "10 11 12"
     "20 21 22";
-  /* align-items: center; */
-  /* justify-content: center; */
-  /* gap: var(--cell-gap); */
-  /* padding: calc(0.1 * var(--game-board-size)); */
-  /* padding: 1%; */
-  /* border: 3px solid white; */
 
   font-size: 2rem;
 }
@@ -75,9 +69,9 @@ header {
   /* box-sizing: content-box !important; */
 }
 
-.cell:hover {
-  /* background-color: rgba(0, 0, 0, 0.274); */
-}
+/* .cell:has() {
+  background-color: rgba(0, 0, 0, 0.274);
+} */
 
 .cell[row="1"] {
   border-top: 5px solid;
@@ -185,7 +179,7 @@ input:focus {
   box-sizing: border-box;
   padding: 20px 40px;
 
-  background-color: white;
+  background-color: rgb(0, 0, 0, 0.2);
 
   box-shadow: 0 0.5rem 1rem black;
 }
@@ -237,10 +231,10 @@ button.ok-btn {
 }
 
 .message-box p {
-  color: black;
+  color: rgb(18, 12, 51);
   text-align: center;
-  font-size: 1.3rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 900;
 }
 
 .message-box .btn-container {

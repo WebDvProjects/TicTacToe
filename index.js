@@ -7,22 +7,22 @@ const cells = document.getElementsByClassName("cell");
 const gameBoard = (function () {
   "use strict";
 
-  let board = [
+  let boardInstance = [
     ["", "", "X"],
     ["", "O", ""],
     ["O", "", ""],
   ];
 
   function Board() {
-    return board;
+    return boardInstance;
   }
 
-  function boardValues() {
+  function boardValues(board = boardInstance) {
     return board.reduce((sofar, row) => sofar.concat([...row]), []);
   }
 
   function resetBoard() {
-    board = [
+    boardInstance = [
       ["", "", ""],
       ["", "", ""],
       ["", "", ""],
@@ -36,15 +36,14 @@ const gameBoard = (function () {
       alert(error.toString());
     }
     // if there is a value in current cell do not update
-    if (!!board[row][col]) return false;
+    if (!!boardInstance[row][col]) return false;
     else {
-      board[row][col] = value;
-      //   checkWin();
+      boardInstance[row][col] = value;
       return true;
     }
   }
 
-  function checkWin() {
+  function checkWin(board = boardInstance) {
     return (
       (board[0][0] == board[0][1] &&
         board[0][0] == board[0][2] &&
@@ -73,19 +72,23 @@ const gameBoard = (function () {
     );
   }
 
-  function checkTie() {
-    if (!checkWin() && boardFull()) {
+  function checkTie(board = boardInstance) {
+    if (!checkWin(board) && boardFull(board)) {
       return true;
     }
 
     return false;
   }
 
-  function boardFull() {
-    return !boardValues().some((val) => val === "");
+  function isGameOver(board = boardInstance) {
+    return checkTie(board) || checkWin(board);
   }
 
-  return { boardValues, resetBoard, Board, updateBoard, checkWin, checkTie };
+  function boardFull(board = boardInstance) {
+    return !boardValues(board).some((val) => val === "");
+  }
+
+  return { boardValues, resetBoard, Board, updateBoard, checkWin, isGameOver };
 })();
 
 const gameDisplay = (function () {
@@ -107,9 +110,6 @@ const gameDisplay = (function () {
     gameBoard.resetBoard();
     updateBoardDisplay();
   }
-  //   function updateGameBoard() {}
-
-  //   function resetGameBoard() {}
 
   return { updateBoardDisplay, resetBoardDisplay };
 })();
@@ -134,7 +134,11 @@ const Player = (type, token = 0, name = "Player 1") => {
       score = 0;
     }
 
-    return { getScore, resetScore };
+    function increment() {
+      score++;
+    }
+
+    return { getScore, resetScore, increment };
   })();
 
   function Token() {
@@ -176,9 +180,12 @@ const Game = (() => {
     }
   };
 
+  // Set selecting events for player 1 and player 2 selections
   iconGroupSetup(player1Icons);
   iconGroupSetup(player2Icons);
 
+  // Sets the selecting events for the player type icons depending on
+  // the player group (player 1 or player 2)
   function iconGroupSetup(iconGroup) {
     iconGroup.forEach(
       (icon) =>
@@ -195,10 +202,12 @@ const Game = (() => {
     );
   }
 
+  // Unselects all icons in a particular player group
   function clearSelectedIcons(iconGroup) {
     iconGroup.forEach((icon) => icon.classList.remove("selected"));
   }
 
+  // Starts the first round of the game
   function startGame() {
     let player2Option = document.querySelector(".player2 .selected");
     let player1Option = document.querySelector(".player1 .selected");
@@ -224,20 +233,17 @@ const Game = (() => {
     logMessage(`${currentPlayer.Name()}'s Turn`);
 
     // if the current player is a computer then simulate a computer turn
-    if (currentPlayer.Type() != "user") {
-      computerTurn();
-    }
+    simulateComputerTurn();
   }
 
+  // executes a new game round if user selects to go again
   function nextRound() {
     selectRandomStartPlayer();
     gameDisplay.resetBoardDisplay();
     logMessage(`${currentPlayer.Name()}'s Turn`);
 
     // if the current player is a computer then simulate a computer turn
-    if (currentPlayer.Type() != "user") {
-      computerTurn();
-    }
+    simulateComputerTurn();
   }
 
   function restartGame() {
@@ -251,8 +257,6 @@ const Game = (() => {
 
     // show player 2 options
     playerOptionsDisplay.classList.remove("hide");
-
-    // ??reset player info
   }
 
   function logMessage(msg) {
@@ -264,43 +268,29 @@ const Game = (() => {
     currentPlayer = [player1, player2][Math.floor(Math.random() * 2)];
   }
 
-  //   function simulateGame() {
-  //     // starts by setting the starting player for this round
-  //     selectRandomStartPlayer();
-  //     logMessage(`${currentPlayer.Name()}'s Turn`);
-  //     // if current player is computer
-  //     if (currentPlayer.Type() != "user") {
-  //       // play the computer turn
-  //       while (!!computerTurn()) {
-  //         // !!temporary
-  //         alert("computer failed to take a turn");
-  //       }
-  //       transferTurn();
-  //     }
-  //   }
-
+  // Check the state of current game (win/tie) otherwise transfers turn to next player
   function transferTurn() {
     // update displayer before turn goes to next player
     gameDisplay.updateBoardDisplay();
     //  check win
-    if (gameBoard.checkWin() || gameBoard.checkTie()) {
+    if (gameBoard.isGameOver()) {
       let displayMsg = "";
       if (gameBoard.checkWin()) {
         // display win message delay a few seconds and reset level
         displayMsg = `${currentPlayer.Name()} has Won the round`;
+        currentPlayer.Score.increment();
       } else {
-        displayMsg = "A tie";
+        displayMsg = "It's A Tie";
       }
 
       // Popup message box
       messageDisplay.roundEnd(displayMsg);
     } else {
+      // change current player to next player
       currentPlayer = currentPlayer === player1 ? player2 : player1;
       logMessage(`${currentPlayer.Name()}'s Turn`);
 
-      if (currentPlayer.Type() != "user") {
-        computerTurn();
-      }
+      simulateComputerTurn();
     }
   }
 
@@ -310,31 +300,60 @@ const Game = (() => {
 
     // if the move was accepted then transfer turn
     if (gameBoard.updateBoard(value, ...position)) {
-      console.log("transferring turn");
       transferTurn();
     }
   }
 
   function computerTurn() {
     if (currentPlayer.Type() != "computer") alert("Wrong player");
+    const token = currentPlayer.Token();
+    // copy of the board that we can simulate with minimax function
+    const boardCopy = gameBoard.Board();
     // computer Algorithm
-    for (let i = 0; i < gameBoard.Board().length; i++) {
-      for (let j = 0; j < gameBoard.Board()[i].length; j++) {
-        const element = gameBoard.Board()[i][j];
-        console.log(element);
+    let bestScore = -Infinity;
+    let bestMove = [0, 0];
+    for (let i = 0; i < boardCopy.length; i++) {
+      for (let j = 0; j < boardCopy[i].length; j++) {
+        const element = boardCopy[i][j];
         // check if position is playable
         if (!!!element) {
-          if (gameBoard.updateBoard(currentPlayer.Token(), i, j)) {
-            transferTurn();
-            return;
+          boardCopy[i][j] = token;
+
+          // calculate the score for the move (We minimize because the next player is the opponent)
+          const score = minimax(boardCopy, 5, false);
+
+          // reset board state at position i,j
+          boardCopy[i][j] = "";
+
+          // update best score and move
+          if (score > bestScore) {
+            [bestScore, bestMove] = [score, [i, j]];
           }
         }
       }
     }
 
-    alert("Computer could make move");
+    // The computed position from a minmax algorithm
+    const copmuterMove = bestMove;
+    // console.log(bestMove);
+
+    if (gameBoard.updateBoard(currentPlayer.Token(), ...copmuterMove)) {
+      transferTurn();
+      return;
+    }
+
+    alert("Computer could not make move");
   }
 
+  // Checks if current player is a computer and allows it to take a turn
+  function simulateComputerTurn() {
+    if (currentPlayer.Type() != "user") {
+      setTimeout(() => computerTurn(), 300);
+      //   computerTurn();
+    }
+  }
+
+  // Register click events on the game board cells allowing users to take turns
   [...cells].forEach((cell) => {
     cell.onclick = (e) => {
       // if current player is null/undefined
@@ -346,16 +365,18 @@ const Game = (() => {
       }
       const cell = e.currentTarget;
 
-      // execute the move
+      // execute the move for the user
       userTurn(cell);
-
-      // after player plays if current player is computer then
 
       e.stopPropagation();
     };
   });
 
-  return { startGame, nextRound, restartGame };
+  function getCurrentPlayer() {
+    return currentPlayer;
+  }
+
+  return { startGame, nextRound, restartGame, getCurrentPlayer };
 })();
 
 const messageDisplay = (() => {
@@ -382,14 +403,6 @@ const messageDisplay = (() => {
     msgTextContainer.innerHTML = "";
     btnContainer.innerHTML = "";
     toggleMesageBox();
-  }
-
-  function playerInfoPrompt(type1, type2) {
-    // if (type1 != "user" && type2 != "user") return ["Computer1", "Computer2"];
-    // if (type1 === "user") {
-    // }
-    // if (type2 === "user") {
-    // }
   }
 
   function displayMessage(msg, error = true) {
@@ -448,3 +461,123 @@ window.onload = () => {
   // reset and startup new game environment
   gameDisplay.resetBoardDisplay();
 };
+
+/* 
+MINIMAX ALGORITHM
+*/
+function minimax(board, depth, isMaximizingPlayer) {
+  // Check for a terminal state (e.g. someone wins or it's a draw)
+  if (gameBoard.isGameOver(board) || depth == 0) {
+    return evaluateBoard(board);
+  }
+
+  //   console.log("in the minimax function");
+  // Generate all possible next moves
+  var bestValue;
+  if (isMaximizingPlayer) {
+    // This is the maximizing player (i.e. the computer)
+    bestValue = -Infinity;
+    for (var i = 0; i < board.length; i++) {
+      for (var j = 0; j < board[i].length; j++) {
+        // Try making the move and recursively calling minimax
+        if (board[i][j] == "") {
+          board[i][j] = Game.getCurrentPlayer().Token();
+          bestValue = Math.max(bestValue, minimax(board, depth - 1, false));
+          board[i][j] = "";
+        }
+      }
+    }
+  } else {
+    // This is the minimizing player (i.e. the opponent)
+    bestValue = Infinity;
+    for (var i = 0; i < board.length; i++) {
+      for (var j = 0; j < board[i].length; j++) {
+        // Try making the move and recursively calling minimax
+        if (board[i][j] == "") {
+          board[i][j] = Game.getCurrentPlayer().Token() == "X" ? "O" : "X";
+          bestValue = Math.min(bestValue, minimax(board, depth - 1, true));
+          board[i][j] = "";
+        }
+      }
+    }
+  }
+
+  return bestValue;
+}
+
+function evaluateBoard(board) {
+  // since we know that the player who executed the minmax function is the currentplayer
+  const currentPlayerToken = Game.getCurrentPlayer().Token();
+  const otherPlayerToken = currentPlayerToken == "X" ? "O" : "X";
+  if (checkWin(board, currentPlayerToken)) {
+    return 1;
+  } else if (checkWin(board, otherPlayerToken)) {
+    return -1;
+  } else {
+    // A tie
+    return 0;
+  }
+}
+
+// returns true if the playerToken is the winner
+function checkWin(board, playerToken) {
+  // if playerToken is the winnning token return true otherwise false
+
+  // check horizontally
+  if (
+    board[0][0] == board[0][1] &&
+    board[0][0] == board[0][2] &&
+    board[0][0] == playerToken
+  )
+    return true;
+
+  if (
+    board[1][0] == board[1][1] &&
+    board[1][0] == board[1][2] &&
+    board[1][0] == playerToken
+  )
+    return true;
+  if (
+    board[2][0] == board[2][1] &&
+    board[2][0] == board[2][2] &&
+    board[2][0] == playerToken
+  )
+    return true;
+
+  // check diagonally
+  if (
+    board[0][0] == board[1][1] &&
+    board[0][0] == board[2][2] &&
+    board[0][0] == playerToken
+  )
+    return true;
+  if (
+    board[0][2] == playerToken &&
+    board[0][2] == board[1][1] &&
+    board[0][2] == board[2][0]
+  )
+    return true;
+
+  // check veritcally
+  if (
+    board[0][0] == playerToken &&
+    board[0][0] == board[1][0] &&
+    board[0][0] == board[2][0]
+  )
+    return true;
+  if (
+    board[0][1] == playerToken &&
+    board[0][1] == board[1][1] &&
+    board[0][1] == board[2][1]
+  )
+    return true;
+  if (
+    board[0][2] == playerToken &&
+    board[0][2] == board[1][2] &&
+    board[0][2] == board[2][2]
+  )
+    return true;
+
+  // otherwise return false
+  return false;
+}
